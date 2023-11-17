@@ -1,0 +1,233 @@
+<!DOCTYPE html>  
+<html>      
+<head>      
+    <title>Piano Sight Play Training</title>      
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">    
+    <style>      
+        .whiteKey {      
+            width: 50px;      
+            height: 200px;      
+            border: 1px solid black;      
+            float: left;      
+            background-color: white;      
+            z-index: 1;      
+            position: relative;      
+        }      
+        
+        .blackKey {      
+            width: 30px;      
+            height: 120px;      
+            background-color: black;      
+            border: 1px solid black;      
+            float: left;      
+            margin-left: -15px;      
+            margin-right: -15px;      
+            z-index: 2;      
+            position: relative;      
+        }      
+    </style>      
+</head>      
+<body>
+    <div class="jumbotron text-center">
+        <h2>Piano Sight Play Training</h2>
+        <p class="text-center mb-4" id="question"></p>
+        <div id="piano" class="mx-auto d-block">    
+            <div class="whiteKey" id="keyC4" onclick="playSound('C4', this)"></div>  
+            <div class="blackKey" id="keyC#4" onclick="playSound('Db4', this)"></div>  
+            <div class="whiteKey" id="keyD4" onclick="playSound('D4', this)"></div>  
+            <div class="blackKey" id="keyD#4" onclick="playSound('Eb4', this)"></div>  
+            <div class="whiteKey" id="keyE4" onclick="playSound('E4', this)"></div>  
+            <div class="whiteKey" id="keyF4" onclick="playSound('F4', this)"></div>  
+            <div class="blackKey" id="keyF#4" onclick="playSound('Gb4', this)"></div>  
+            <div class="whiteKey" id="keyG4" onclick="playSound('G4', this)"></div>  
+            <div class="blackKey" id="keyG#4" onclick="playSound('Ab4', this)"></div>  
+            <div class="whiteKey" id="keyA4" onclick="playSound('A4', this)"></div>  
+            <div class="blackKey" id="keyA#4" onclick="playSound('Bb4', this)"></div>  
+            <div class="whiteKey" id="keyB4" onclick="playSound('B4', this)"></div>  
+
+            <div class="whiteKey" id="keyC5" onclick="playSound('C5', this)"></div>  
+            <div class="blackKey" id="keyC#5" onclick="playSound('Db5', this)"></div>  
+            <div class="whiteKey" id="keyD5" onclick="playSound('D5', this)"></div>  
+            <div class="blackKey" id="keyD#5" onclick="playSound('Eb5', this)"></div>  
+            <div class="whiteKey" id="keyE5" onclick="playSound('E5', this)"></div>  
+            <div class="whiteKey" id="keyF5" onclick="playSound('F5', this)"></div>  
+            <div class="blackKey" id="keyF#5" onclick="playSound('Gb5', this)"></div>  
+            <div class="whiteKey" id="keyG5" onclick="playSound('G5', this)"></div>  
+            <div class="blackKey" id="keyG#5" onclick="playSound('Ab5', this)"></div>  
+            <div class="whiteKey" id="keyA5" onclick="playSound('A5', this)"></div>  
+            <div class="blackKey" id="keyA#5" onclick="playSound('Bb5', this)"></div>  
+            <div class="whiteKey" id="keyB5" onclick="playSound('B5', this)"></div>  
+            <div class="whiteKey" id="keyC6" onclick="playSound('C6', this)"></div>
+        </div>    
+        <button id="next-button" style="display: none;" class="mx-auto d-block btn btn-success">Next Question</button>
+        <p class="text-center mt-4">Your score: <span id="score">0</span>/<span id="numQuestion">0</span></p>
+        <p class="text-center mt-4" id="correct" style="display: none;">Correct!</p>
+        <p class="text-center mt-4" id="wrong" style="display: none;">Wrong!</p>
+
+        <div id="boo"></div>
+        <div id="answer"></div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>    
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/1.2.90/vexflow-min.js"></script>
+    <script>  
+        // Your JavaScript code here  
+        var score = 0;
+        var numQuestion = 0;
+        var abs_notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];     
+        var notes = []
+        var currentNoteSequence = []
+        
+        for (var i = 0; i <abs_notes.length; i++) {
+            notes.push(abs_notes[i] + '4');
+            notes.push(abs_notes[i] + '5');
+        }
+      
+        function renderScore() {
+            var div = document.getElementById("boo")
+            var renderer = new Vex.Flow.Renderer(div, Vex.Flow.Renderer.Backends.SVG);
+
+            renderer.resize(300, 500);
+            var context = renderer.getContext();
+            var stave = new Vex.Flow.Stave(10, 0, 400);
+
+            stave.addClef("treble").addTimeSignature("4/4");
+            stave.setContext(context).draw();
+        }
+        
+        function resetKeys() {  
+            document.querySelectorAll(".whiteKey").forEach(function(key) {  
+                key.style.backgroundColor = "white";  
+            });  
+            document.querySelectorAll(".blackKey").forEach(function(key) {  
+                key.style.backgroundColor = "black";  
+            });  
+        }
+        
+        function generateNotes() {
+            notesSequence = [];
+            for (var i = 0; i < 4; i++) {
+                var noteIndex = Math.floor(Math.random() * notes.length);
+                notesSequence.push(notes[noteIndex]);
+            }
+            drawNotes(notesSequence);
+            currentNoteSequence = notesSequence.slice();
+        }
+
+        function drawNotes(notes) {
+            // Clear the stave
+            var div = document.getElementById("boo");
+            div.innerHTML = '';
+
+            var renderer = new Vex.Flow.Renderer(div, Vex.Flow.Renderer.Backends.SVG);
+            const VF = Vex.Flow;
+            const { Factory, EasyScore, System } = Vex.Flow;
+
+            const vf = new Factory({
+                renderer: renderer
+            });
+
+            const score = vf.EasyScore();
+            const system = vf.System();
+
+            var vexNotes = "";
+            for (var i = 0; i < notes.length; i++) {
+                vexNotes += notes[i] + "/q, ";
+            }
+            console.log(vexNotes);
+
+            system
+                .addStave({
+                voices: [
+                    score.voice(score.notes(vexNotes, { stem: "up" }))
+                    // score.voice(score.notes("C#4/h, C#4", { stem: "down" }))
+                ]
+                })
+                .addClef("treble")
+                .addTimeSignature("4/4");
+
+            vf.draw();
+        }
+      
+        function showAnswer() {  
+            // Get the element where the answer will be displayed
+            var answerElement = document.getElementById("answer");
+
+            // Convert the notesSequence array to a string
+            var answerString = notesSequence.join(", ");
+
+            // Set the text content of the answer element to the string of notes
+            answerElement.textContent = "The correct sequence was: " + answerString;
+
+            document.getElementById("next-button").style.display = "block";
+            document.getElementById("wrong").style.display = "block";
+            document.getElementById("correct").style.display = "none";
+            disableKeyClick = true;
+        }  
+      
+        function askQuestion() {    
+            resetKeys();
+            disableKeyClick = false;
+
+            generateNotes();
+
+            numQuestion++;  
+            document.getElementById("numQuestion").innerText = numQuestion;    
+            document.getElementById("answer").innerText = "";
+        }    
+      
+        function checkAnswer(key) {
+            if(disableKeyClick){
+                return;
+            }
+            var note = key;
+            console.log(note)
+            if(key == currentNoteSequence[0]){
+                currentNoteSequence.shift();
+                if(currentNoteSequence.length == 0){
+                    score++;
+                    document.getElementById("wrong").style.display = "none";
+                    document.getElementById("correct").style.display = "block";
+                    askQuestion();
+                }
+            } else {
+                showAnswer();
+            }
+
+            document.getElementById("score").innerText = score;  
+        }
+
+        function playSound(note, key) {
+            if(disableKeyClick == false){
+                var audio = document.createElement('audio');
+                console.log(note);
+                audio.src = 'sounds/' + note + '.mp3';  
+                audio.type = 'audio/mpeg';  
+                audio.onplay = function() {  
+                    setTimeout(function() {  
+                        audio.pause();  
+                        key.style.backgroundColor = key.classList.contains('whiteKey') ? 'white' : 'black';
+                    }, 500);  
+                };  
+                key.style.backgroundColor = 'red';  
+                audio.play();
+                document.getElementById("wrong").style.display = "none";
+                document.getElementById("correct").style.display = "none";
+            }
+        }  
+      
+        // Assuming keys have ids like "keyA4", "keyB4", etc.  
+        document.querySelectorAll(".whiteKey, .blackKey").forEach(function(key) {  
+            key.addEventListener("click", function() {  
+                checkAnswer(this.id.replace("key", ""));  
+            });  
+        });  
+      
+        document.getElementById("next-button").addEventListener("click", askQuestion);  
+      
+        askQuestion();  
+    </script>  
+     
+</body>      
+</html>  

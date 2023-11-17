@@ -1,0 +1,226 @@
+<!DOCTYPE html>  
+<html>      
+<head>      
+    <title>Piano Chord Learner</title>      
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">    
+    <style>      
+        .whiteKey {      
+            width: 50px;      
+            height: 200px;      
+            border: 1px solid black;      
+            float: left;      
+            background-color: white;      
+            z-index: 1;      
+            position: relative;      
+        }      
+        
+        .blackKey {      
+            width: 30px;      
+            height: 120px;      
+            background-color: black;      
+            border: 1px solid black;      
+            float: left;      
+            margin-left: -15px;      
+            margin-right: -15px;      
+            z-index: 2;      
+            position: relative;      
+        }      
+    </style>      
+</head>      
+<body>
+    <div class="jumbotron text-center">
+        <h2>Piano Chord Learner</h2>
+        <p class="text-center mb-4" id="question"></p>
+        <div id="piano" class="mx-auto d-block">    
+            <div class="whiteKey" id="keyC3" onclick="playSound('C3', this)"></div>  
+            <div class="blackKey" id="keyC#3" onclick="playSound('Db3', this)"></div>  
+            <div class="whiteKey" id="keyD3" onclick="playSound('D3', this)"></div>  
+            <div class="blackKey" id="keyD#3" onclick="playSound('Eb3', this)"></div>  
+            <div class="whiteKey" id="keyE3" onclick="playSound('E3', this)"></div>  
+            <div class="whiteKey" id="keyF3" onclick="playSound('F3', this)"></div>  
+            <div class="blackKey" id="keyF#3" onclick="playSound('Gb3', this)"></div>  
+            <div class="whiteKey" id="keyG3" onclick="playSound('G3', this)"></div>  
+            <div class="blackKey" id="keyG#3" onclick="playSound('Ab3', this)"></div>  
+            <div class="whiteKey" id="keyA3" onclick="playSound('A3', this)"></div>  
+            <div class="blackKey" id="keyA#3" onclick="playSound('Bb3', this)"></div>  
+            <div class="whiteKey" id="keyB3" onclick="playSound('B3', this)"></div>  
+
+            <div class="whiteKey" id="keyC4" onclick="playSound('C4', this)"></div>  
+            <div class="blackKey" id="keyC#4" onclick="playSound('Db4', this)"></div>  
+            <div class="whiteKey" id="keyD4" onclick="playSound('D4', this)"></div>  
+            <div class="blackKey" id="keyD#4" onclick="playSound('Eb4', this)"></div>  
+            <div class="whiteKey" id="keyE4" onclick="playSound('E4', this)"></div>  
+            <div class="whiteKey" id="keyF4" onclick="playSound('F4', this)"></div>  
+            <div class="blackKey" id="keyF#4" onclick="playSound('Gb4', this)"></div>  
+            <div class="whiteKey" id="keyG4" onclick="playSound('G4', this)"></div>  
+            <div class="blackKey" id="keyG#4" onclick="playSound('Ab4', this)"></div>  
+            <div class="whiteKey" id="keyA4" onclick="playSound('A4', this)"></div>  
+            <div class="blackKey" id="keyA#4" onclick="playSound('Bb4', this)"></div>  
+            <div class="whiteKey" id="keyB4" onclick="playSound('B4', this)"></div>  
+            <div class="whiteKey" id="keyC5" onclick="playSound('C5', this)"></div>
+        </div>    
+        <button id="next-button" style="display: none;" class="mx-auto d-block btn btn-success">Next Question</button>
+        <p class="text-center mt-4">Your score: <span id="score">0</span>/<span id="numQuestion">0</span></p>
+    
+        <form id="chord-select-form"  class="mb-6">  
+            <label>  
+                <input type="checkbox" name="chord" value="major" checked>  
+                Major  
+            </label>  
+            <label>  
+                <input type="checkbox" name="chord" value="minor" checked>  
+                Minor  
+            </label>  
+            <label>  
+                <input type="checkbox" name="chord" value="dominant" checked>  
+                Dominant  
+            </label>  
+            <label>  
+                <input type="checkbox" name="chord" value="major7" checked>  
+                Major 7th  
+            </label>  
+            <label>  
+                <input type="checkbox" name="chord" value="minor7" checked>  
+                Minor 7th  
+            </label>  
+            <label>  
+                <input type="checkbox" name="chord" value="dominant7" checked>  
+                Dominant 7th  
+            </label>  
+        </form>
+    </div>
+    
+    <p class="text-center mt-4">Wrong list:</p>
+    <ul id="wrong-list"></ul> 
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>    
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>  
+    <script>  
+        // Your JavaScript code here  
+        var score = 0;
+        var numQuestion = 0;
+        var notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];      
+        var chord_types = {      
+            'major': [0, 4, 7],      
+            'minor': [0, 3, 7],      
+            'dominant': [0, 4, 7, 10],      
+            'major7': [0, 4, 7, 11],      
+            'minor7': [0, 3, 7, 10],      
+            'dominant7': [0, 4, 7, 10]
+        };  
+        var chords = {};  
+        var disableKeyClick = false;
+        function addChords(selectedChordTypes) {
+            chords = {};
+            for (var i = 0; i < notes.length; i++) {  
+                var note = notes[i];  
+                for (var chordTypeIdx in selectedChordTypes) {
+                    chordType = selectedChordTypes[chordTypeIdx];
+                    chords[note + chordType] = chord_types[chordType].map(function(interval) {  
+                        return notes[(i + interval) % notes.length];  
+                    });  
+                }  
+            } 
+        }
+
+        var currentChord = null;  
+        var currentChordNotes = [];  
+      
+        function resetKeys() {  
+            document.querySelectorAll(".whiteKey").forEach(function(key) {  
+                key.style.backgroundColor = "white";  
+            });  
+            document.querySelectorAll(".blackKey").forEach(function(key) {  
+                key.style.backgroundColor = "black";  
+            });  
+        }  
+      
+        function showAnswer() {  
+            chords[currentChord].forEach(function(note) {  
+                // Mark all keys with this note as green, regardless of the octave  
+                document.querySelectorAll('[id^="key' + note + '"]').forEach(function(key) {  
+                    var keyNote = key.id.replace("key", "").replace(/[0-9]$/, ""); // Remove the "key" prefix and the last character if it's a digit  
+                    if (note === keyNote) {  
+                        key.style.backgroundColor = "green";  
+                    }  
+                });  
+            });  
+            document.getElementById("next-button").style.display = "block";  
+
+            disableKeyClick = true;
+        }  
+      
+        function askQuestion() {    
+            resetKeys();
+            disableKeyClick = false;
+
+            var selectedChordTypes = Array.from(  
+                document.querySelectorAll('#chord-select-form input:checked'),  
+                checkbox => checkbox.value  
+            );
+            console.log(selectedChordTypes);
+            addChords(selectedChordTypes);
+
+            document.getElementById("next-button").style.display = "none";    
+            var keys = Object.keys(chords);    
+            currentChord = keys[Math.floor(Math.random() * keys.length)];    
+            currentChordNotes = chords[currentChord].slice(); // Copy the array    
+            document.getElementById("question").innerText = "Please play the " + currentChord + " chord.";    
+            numQuestion++;  
+            document.getElementById("numQuestion").innerText = numQuestion;    
+        }    
+      
+        function checkAnswer(key) {
+            if(disableKeyClick){
+                return;
+            }
+            var note = key.replace(/[0-9]$/, ""); // Remove the last character if it's a digit  
+            var index = currentChordNotes.indexOf(note);  
+            if (index > -1) {  
+                currentChordNotes.splice(index, 1); // Remove the note from the array  
+                if (currentChordNotes.length === 0) { // If all notes have been clicked  
+                    score++;  
+                    askQuestion();  
+                }  
+            } else {  
+                var wrongList = document.getElementById("wrong-list");  
+                var listItem = document.createElement("li");  
+                listItem.textContent = currentChord + " - " + chords[currentChord];  
+                wrongList.appendChild(listItem);  
+                showAnswer();    
+            }  
+            document.getElementById("score").innerText = score;  
+        }
+
+        function playSound(note, key) {
+            if(disableKeyClick == false){
+                var audio = document.createElement('audio');
+                console.log(note);
+                audio.src = 'sounds/' + note + '.mp3';  
+                audio.type = 'audio/mpeg';  
+                audio.onplay = function() {  
+                    setTimeout(function() {  
+                        audio.pause();  
+                        // key.style.backgroundColor = key.classList.contains('whiteKey') ? 'white' : 'black';
+                    }, 500);  
+                };  
+                key.style.backgroundColor = 'red';  
+                audio.play();  
+            }
+        }  
+      
+        // Assuming keys have ids like "keyA4", "keyB4", etc.  
+        document.querySelectorAll(".whiteKey, .blackKey").forEach(function(key) {  
+            key.addEventListener("click", function() {  
+                checkAnswer(this.id.replace("key", ""));  
+            });  
+        });  
+      
+        document.getElementById("next-button").addEventListener("click", askQuestion);  
+      
+        askQuestion();  
+    </script>  
+     
+</body>      
+</html>  
