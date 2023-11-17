@@ -94,6 +94,7 @@
             <div class="whiteKey" id="keyB5" onclick="playSound('B5', this)"></div>  
             <div class="whiteKey" id="keyC6" onclick="playSound('C6', this)"></div>
         </div>    
+        <p class="text-center mt-4" id="midi" style="display: none;">Midi supported</p>
         <button id="next-button" style="display: none;" class="mx-auto d-block btn btn-success">Next Question</button>
         <p class="text-center mt-4">Your score: <span id="score">0</span>/<span id="numQuestion">0</span></p>
         <p class="text-center mt-4" id="correct" style="display: none;">Correct!</p>
@@ -290,7 +291,85 @@
       
         document.getElementById("next-button").addEventListener("click", askQuestion);  
       
-        askQuestion();  
+        askQuestion();
+
+
+        // Midi related
+        function listInputsAndOutputs() {
+            if (MIDI === null) return;
+            clearContent("inputs");
+            clearContent("outputs");
+            MIDI.inputs.forEach(function(port, key) {
+                print(port.manufacturer + " " + port.name, "inputs");
+            });
+            MIDI.outputs.forEach(function(port, key) {
+                print(port.manufacturer + " " + port.name, "outputs");
+            });
+        }
+
+        function connectInputs() {
+            if (MIDI === null) return;
+            MIDI.inputs.forEach(function(port, key) {
+                port.onmidimessage = onMidiMessage;
+            });
+        }
+
+        function onMidiMessage(message) {
+            if (message instanceof MIDIMessageEvent) {
+                let bytes = message.data;       // type is Uint8Array
+                let channel = bytes[0] & 0x0F;  // MIDI channel
+                // let type = bytes[0] & 0xF0;     // MIDI event type
+                let port = message.currentTarget;
+                console.log(bytes)
+                print(" data: [" + hs(bytes) + "] - channel: " + (channel+1) + " - source: " + port.name, "messages", null, true);
+            }
+        }
+
+        function onStateChange(event) {
+            const p = event.port;
+            if (p.state === "connected") {
+                if (p.type === "input") {
+                    if (!p.onmidimessage) {
+                        p.onmidimessage = onMidiMessage;
+                    }
+                }
+            } else if (p.state === "disconnected") {
+                if (p.type === "input") {
+                    if (p.onmidimessage) {
+                        p.onmidimessage = null;
+                    }
+                }
+            }
+            listInputsAndOutputs();
+        }
+
+        function onMIDISuccess(midiAccess) {
+            document.getElementById("midi").style.display = "block";
+            MIDI = midiAccess;
+            MIDI.onstatechange = onStateChange;
+            connectInputs();
+            listInputsAndOutputs();
+        }
+
+        function onMIDIFailure(msg) {
+            return;
+        }
+
+        function test() {
+            if (navigator.requestMIDIAccess) {
+                navigator.requestMIDIAccess({sysex:false}).then(onMIDISuccess, onMIDIFailure);
+            }
+        }
+
+        function whenReadyDo(callback) {
+            if (document.readyState !== "loading") {
+                callback();
+            } else {
+                document.addEventListener("DOMContentLoaded", callback);
+            }
+        }
+
+        whenReadyDo(test);
     </script>  
      
 </body>      
