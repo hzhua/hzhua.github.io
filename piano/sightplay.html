@@ -26,7 +26,7 @@
             position: relative;      
         }      
     </style>      
-</head>      
+</head>
 <body>
     <div class="jumbotron text-center">
         <h2>Piano Sight Play Training</h2>
@@ -76,8 +76,10 @@
         var score = 0;
         var numQuestion = 0;
         var abs_notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];     
-        var notes = []
-        var currentNoteSequence = []
+        var notes = [];
+        var currentNoteSequence = [];
+        var notesSequence = [];
+        var correctNoteCount = 0;
         
         for (var i = 0; i <abs_notes.length; i++) {
             notes.push(abs_notes[i] + '4');
@@ -111,11 +113,12 @@
                 var noteIndex = Math.floor(Math.random() * notes.length);
                 notesSequence.push(notes[noteIndex]);
             }
-            drawNotes(notesSequence);
+            drawNotes(notesSequence, 0);
+            correctNoteCount = 0;
             currentNoteSequence = notesSequence.slice();
         }
 
-        function drawNotes(notes) {
+        function drawNotes(notes, correctNoteCount, wrongNoteCount) {
             // Clear the stave
             var div = document.getElementById("boo");
             div.innerHTML = '';
@@ -131,16 +134,24 @@
             const score = vf.EasyScore();
             const system = vf.System();
 
-            var vexNotes = "";
+            var vexNotes = [];
             for (var i = 0; i < notes.length; i++) {
-                vexNotes += notes[i] + "/q, ";
+                var noteColor = (i<correctNoteCount) ? "green" : ((i<correctNoteCount+wrongNoteCount) ? "red" : undefined);
+                let noteName = notes[i].toLowerCase().replace("4", "/4").replace("5", "/5").replace("6", "/6");
+                let note = new VF.StaveNote({ keys: [noteName], duration: "q" });
+                if(noteName.includes('#')){
+                    note.addAccidental(0, new Vex.Flow.Accidental("#"));
+                }
+                if(noteColor) {
+                    note.setStyle({ fillStyle: noteColor });
+                }
+                vexNotes.push(note);
             }
-            console.log(vexNotes);
 
             system
                 .addStave({
                 voices: [
-                    score.voice(score.notes(vexNotes, { stem: "up" }))
+                    score.voice(vexNotes)
                     // score.voice(score.notes("C#4/h, C#4", { stem: "down" }))
                 ]
                 })
@@ -182,40 +193,58 @@
                 return;
             }
             var note = key;
-            console.log(note)
             if(key == currentNoteSequence[0]){
+                correctNoteCount ++;
                 currentNoteSequence.shift();
                 if(currentNoteSequence.length == 0){
                     score++;
                     document.getElementById("wrong").style.display = "none";
                     document.getElementById("correct").style.display = "block";
                     askQuestion();
+                } else {
+                    drawNotes(notesSequence, correctNoteCount);
                 }
             } else {
+                drawNotes(notesSequence, correctNoteCount, 1);
                 showAnswer();
             }
 
             document.getElementById("score").innerText = score;  
         }
 
+        // Create an object to store your audio files
+        var sounds = {};
+
+        // Function to preload sounds
+        function preloadSounds(notes) {
+            for (var i = 0; i < notes.length; i++) {
+                var audio = new Audio();
+                audio.src = 'sounds/' + notes[i] + '.mp3';
+                audio.load();
+                sounds[notes[i]] = audio;
+            }
+        }
+
+        // Call this function when the page loads, passing in an array of all your notes
+        window.onload = function() {
+            preloadSounds(['C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C5', 'Db5', 'D5', 'Eb5', 'E5', 'F5', 'Gb5', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C6']);  // replace with your actual notes
+        };
+
         function playSound(note, key) {
             if(disableKeyClick == false){
-                var audio = document.createElement('audio');
-                console.log(note);
-                audio.src = 'sounds/' + note + '.mp3';  
-                audio.type = 'audio/mpeg';  
-                audio.onplay = function() {  
-                    setTimeout(function() {  
-                        audio.pause();  
+                var audio = sounds[note];
+                audio.onplay = function() {
+                    setTimeout(function() {
+                        audio.pause();
                         key.style.backgroundColor = key.classList.contains('whiteKey') ? 'white' : 'black';
-                    }, 500);  
-                };  
-                key.style.backgroundColor = 'red';  
+                    }, 500);
+                };
+                key.style.backgroundColor = 'red';
                 audio.play();
                 document.getElementById("wrong").style.display = "none";
                 document.getElementById("correct").style.display = "none";
             }
-        }  
+        }
       
         // Assuming keys have ids like "keyA4", "keyB4", etc.  
         document.querySelectorAll(".whiteKey, .blackKey").forEach(function(key) {  
