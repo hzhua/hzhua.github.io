@@ -107,6 +107,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>    
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/1.2.90/vexflow-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webmidi@2.5.1/webmidi.min.js"></script>
+
     <script>  
         // Your JavaScript code here  
         var score = 0;
@@ -287,89 +289,29 @@
             key.addEventListener("click", function() {  
                 checkAnswer(this.id.replace("key", ""));  
             });  
-        });  
+        });
       
         document.getElementById("next-button").addEventListener("click", askQuestion);  
       
         askQuestion();
 
+        // Midi
 
-        // Midi related
-        function listInputsAndOutputs() {
-            if (MIDI === null) return;
-            clearContent("inputs");
-            clearContent("outputs");
-            MIDI.inputs.forEach(function(port, key) {
-                print(port.manufacturer + " " + port.name, "inputs");
-            });
-            MIDI.outputs.forEach(function(port, key) {
-                print(port.manufacturer + " " + port.name, "outputs");
-            });
+        WebMidi.enable(function (err) {
+        if (err) {
+            console.log("WebMidi could not be enabled.", err);
+        } else {
+            console.log("WebMidi enabled!");
         }
-
-        function connectInputs() {
-            if (MIDI === null) return;
-            MIDI.inputs.forEach(function(port, key) {
-                port.onmidimessage = onMidiMessage;
-            });
-        }
-
-        function onMidiMessage(message) {
-            if (message instanceof MIDIMessageEvent) {
-                let bytes = message.data;       // type is Uint8Array
-                let channel = bytes[0] & 0x0F;  // MIDI channel
-                // let type = bytes[0] & 0xF0;     // MIDI event type
-                let port = message.currentTarget;
-                console.log(bytes)
-                print(" data: [" + hs(bytes) + "] - channel: " + (channel+1) + " - source: " + port.name, "messages", null, true);
+        
+        // Listening for a 'note on' message on all channels
+        WebMidi.inputs[0].addListener('noteon', "all",
+            function (e) {
+                console.log("Received 'noteon' message (" + e.note.name + e.note.octave + ").");
+                document.getElementById("key"+ e.note.name + e.note.octave).click()
             }
-        }
-
-        function onStateChange(event) {
-            const p = event.port;
-            if (p.state === "connected") {
-                if (p.type === "input") {
-                    if (!p.onmidimessage) {
-                        p.onmidimessage = onMidiMessage;
-                    }
-                }
-            } else if (p.state === "disconnected") {
-                if (p.type === "input") {
-                    if (p.onmidimessage) {
-                        p.onmidimessage = null;
-                    }
-                }
-            }
-            listInputsAndOutputs();
-        }
-
-        function onMIDISuccess(midiAccess) {
-            document.getElementById("midi").style.display = "block";
-            MIDI = midiAccess;
-            MIDI.onstatechange = onStateChange;
-            connectInputs();
-            listInputsAndOutputs();
-        }
-
-        function onMIDIFailure(msg) {
-            return;
-        }
-
-        function test() {
-            if (navigator.requestMIDIAccess) {
-                navigator.requestMIDIAccess({sysex:false}).then(onMIDISuccess, onMIDIFailure);
-            }
-        }
-
-        function whenReadyDo(callback) {
-            if (document.readyState !== "loading") {
-                callback();
-            } else {
-                document.addEventListener("DOMContentLoaded", callback);
-            }
-        }
-
-        whenReadyDo(test);
+        );
+        });
     </script>  
      
 </body>      
