@@ -4,27 +4,62 @@
     <title>Piano Sight Play Training</title>      
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">    
     <style>      
-        .whiteKey {      
-            width: 50px;      
-            height: 200px;      
-            border: 1px solid black;      
+        .whiteKey, .blackKey {      
             float: left;      
-            background-color: white;      
-            z-index: 1;      
+            border: 1px solid black;      
             position: relative;      
+            z-index: 1;
         }      
-        
+      
         .blackKey {      
-            width: 30px;      
-            height: 120px;      
             background-color: black;      
-            border: 1px solid black;      
-            float: left;      
-            margin-left: -15px;      
-            margin-right: -15px;      
-            z-index: 2;      
-            position: relative;      
-        }      
+            z-index: 2;
+        } 
+
+        /* For desktop and laptop screens */
+        @media(min-width: 992px){
+            .whiteKey {      
+                width: 50px;      
+                height: 200px;      
+                background-color: white;      
+            } 
+            .blackKey {      
+                width: 30px;      
+                height: 120px;      
+                margin-left: -15px;      
+                margin-right: -15px;      
+            } 
+        }
+
+        /* For tablet screens */
+        @media(max-width: 991px){
+            .whiteKey {      
+                width: 35px;      
+                height: 150px;      
+                background-color: white;      
+            } 
+            .blackKey {      
+                width: 20px;      
+                height: 90px;      
+                margin-left: -10px;      
+                margin-right: -10px;      
+            } 
+        }
+
+        /* For mobile screens */
+        @media(max-width: 576px){
+            .whiteKey {      
+                width: 25px;      
+                height: 120px;      
+                background-color: white;      
+            } 
+            .blackKey {      
+                width: 15px;      
+                height: 80px;      
+                margin-left: -7.5px;      
+                margin-right: -7.5px;      
+            } 
+        }
     </style>      
 </head>
 <body>
