@@ -102,7 +102,8 @@
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>    
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>  
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webmidi@2.5.1/webmidi.min.js"></script>
     <script>  
         // Your JavaScript code here  
         var score = 0;
@@ -213,9 +214,7 @@
         }
 
         // Call this function when the page loads, passing in an array of all your notes
-        window.onload = function() {
-            preloadSounds(['C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C5', 'Db5', 'D5', 'Eb5', 'E5', 'F5', 'Gb5', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C6']);  // replace with your actual notes
-        };
+        preloadSounds(['C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C5', 'Db5', 'D5', 'Eb5', 'E5', 'F5', 'Gb5', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C6']);  // replace with your actual notes
 
         function playSound(note, key) {
             if(disableKeyClick == false){
@@ -243,6 +242,23 @@
         document.getElementById("next-button").addEventListener("click", askQuestion);  
       
         askQuestion();  
+
+        // midi
+        WebMidi.enable(function (err) {
+        if (err) {
+            console.log("WebMidi could not be enabled.", err);
+        } else {
+            console.log("WebMidi enabled!");
+        }
+        
+        // Listening for a 'note on' message on all channels
+        WebMidi.inputs[0].addListener('noteon', "all",
+            function (e) {
+                console.log("Received 'noteon' message (" + e.note.name + e.note.octave + ").");
+                document.getElementById("key"+ e.note.name + e.note.octave).click()
+            }
+        );
+        }
     </script>  
      
 </body>      
