@@ -93,9 +93,11 @@
             <div class="blackKey" id="keyA#4" onclick="playSound('Bb4', this)"></div>  
             <div class="whiteKey" id="keyB4" onclick="playSound('B4', this)"></div>  
             <div class="whiteKey" id="keyC5" onclick="playSound('C5', this)"></div>
-        </div>    
+        </div>
+        <progress id="progressBar" value="0" max="100"></progress>
         <button id="next-button" style="display: none;" class="mx-auto d-block btn btn-success">Next Question</button>
-        <p class="text-center mt-4">Your score: <span id="score">0</span>/<span id="numQuestion">0</span></p>
+        <p class="text-center mt-4">Your score: <span id="score">0</span></p>
+        <p class="text-center mt-4">Remaining Questions: <span id="numQuestion">0</span></p>
     
         <form id="chord-select-form"  class="mb-6">  
             <label>  
@@ -126,6 +128,7 @@
         </form>
     </div>
     
+    
     <p class="text-center mt-4">Wrong list:</p>
     <ul id="wrong-list"></ul> 
 
@@ -136,7 +139,7 @@
     <script>  
         // Your JavaScript code here  
         var score = 0;
-        var numQuestion = 0;
+        var numQuestion = 10;
         var notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];      
         var chord_types = {      
             'major': [0, 4, 7],      
@@ -145,8 +148,9 @@
             'minor7': [0, 3, 7, 10],
             'diminished7': [0, 3, 6, 9],
             'dominant7': [0, 4, 7, 10]
-        };  
-        var chords = {};  
+        };
+        var chords = {};
+        var waiting_list = [];
         var disableKeyClick = false;
         function addChords(selectedChordTypes) {
             chords = {};
@@ -186,27 +190,42 @@
             document.getElementById("next-button").style.display = "block";  
 
             disableKeyClick = true;
-        }  
-      
-        function askQuestion() {    
-            resetKeys();
-            disableKeyClick = false;
+        }
 
+        function generateAllQuestions(){
             var selectedChordTypes = Array.from(  
                 document.querySelectorAll('#chord-select-form input:checked'),  
                 checkbox => checkbox.value  
             );
             console.log(selectedChordTypes);
             addChords(selectedChordTypes);
+            var keys = Object.keys(chords);   
 
-            document.getElementById("next-button").style.display = "none";    
-            var keys = Object.keys(chords);    
-            currentChord = keys[Math.floor(Math.random() * keys.length)];    
+            for(var qId = 0; qId<numQuestion; qId++){
+                
+                currentChord = keys[Math.floor(Math.random() * keys.length)];
+                waiting_list.push(currentChord);
+            }
+        }
+
+        function newRound(){
+            waiting_list = [];
+            generateAllQuestions();
+            score = 0;
+            var wrongList = document.getElementById("wrong-list");
+            wrongList.innerHTML = "";
+        }
+      
+        function askQuestion() {    
+            resetKeys();
+            disableKeyClick = false;
+            document.getElementById("next-button").style.display = "none";
+            currentChord = waiting_list[0];
+            waiting_list.splice(0, 1);
             currentChordNotes = chords[currentChord].slice(); // Copy the array    
             document.getElementById("question").innerText = "Please play the " + currentChord + " chord.";    
-            numQuestion++;  
-            document.getElementById("numQuestion").innerText = numQuestion;    
-        }    
+            document.getElementById("numQuestion").innerText = waiting_list.length+1;  
+        }
       
         function checkAnswer(key) {
             if(disableKeyClick){
@@ -217,14 +236,19 @@
             if (index > -1) {  
                 currentChordNotes.splice(index, 1); // Remove the note from the array  
                 if (currentChordNotes.length === 0) { // If all notes have been clicked  
-                    score++;  
-                    askQuestion();  
-                }  
+                    score++;
+                    if (waiting_list.length == 0){
+                        newRound();
+                    }
+                    askQuestion();
+                    document.getElementById('progressBar').value = 100-waiting_list.length *100/ numQuestion;
+                }
             } else {  
                 var wrongList = document.getElementById("wrong-list");  
                 var listItem = document.createElement("li");  
                 listItem.textContent = currentChord + " - " + chords[currentChord];  
-                wrongList.appendChild(listItem);  
+                wrongList.appendChild(listItem);
+                waiting_list.push(currentChord);
                 showAnswer();    
             }  
             document.getElementById("score").innerText = score;  
@@ -272,24 +296,26 @@
       
         document.getElementById("next-button").addEventListener("click", askQuestion);  
       
-        askQuestion();  
+        newRound();
+        askQuestion();
 
         //midi
-
+        
         WebMidi.enable(function (err) {
         if (err) {
             console.log("WebMidi could not be enabled.", err);
         } else {
             console.log("WebMidi enabled!");
+            // Listening for a 'note on' message on all channels
+            WebMidi.inputs[0].addListener('noteon', "all",
+                function (e) {
+                    console.log("Received 'noteon' message (" + e.note.name + e.note.octave + ").");
+                    document.getElementById("key"+ e.note.name + e.note.octave).click()
+                }
+            );
         }
         
-        // Listening for a 'note on' message on all channels
-        WebMidi.inputs[0].addListener('noteon', "all",
-            function (e) {
-                console.log("Received 'noteon' message (" + e.note.name + e.note.octave + ").");
-                document.getElementById("key"+ e.note.name + e.note.octave).click()
-            }
-        );
+        
         });
     </script>  
      
